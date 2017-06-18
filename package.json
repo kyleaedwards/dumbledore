@@ -1,0 +1,31 @@
+{
+  "name": "hermione",
+  "version": "1.0.0",
+  "description": "markdown-powered knowledgebase",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "PORT=5000 node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint ."
+  },
+  "author": "Kyle Edwards <edwards.kyle.a@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^1.6.1",
+    "express": "^4.14.0",
+    "front-matter": "^2.1.1",
+    "marked": "^0.3.6",
+    "pug": "^2.0.0-beta6",
+    "simple-git": "^1.73.0",
+    "socket.io": "^1.7.2",
+    "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^3.11.1",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.7.1"
+  }
+}

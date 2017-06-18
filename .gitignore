@@ -1,0 +1,19 @@
+# npm
+node_modules/
+npm-debug.log
+
+# Mocha
+test/mocha.opts
+
+# Coverage
+coverage/
+
+# Complexity report
+complexity/
+
+# OSX
+.DS_Store
+
+# Hermione document store
+docs/
+.hermione
