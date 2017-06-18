@@ -17,3 +17,4 @@ complexity/
 # Hermione document store
 docs/
 .hermione
+config.json
