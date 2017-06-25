@@ -36,5 +36,5 @@
   },
   "bin": {
     "granger": "./bin/granger"
-  },
+  }
 }
