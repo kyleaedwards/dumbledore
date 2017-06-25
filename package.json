@@ -1,5 +1,5 @@
 {
-  "name": "granger",
+  "name": "dumbledore",
   "version": "1.0.0",
   "description": "markdown-powered knowledgebase",
   "main": "index.js",
@@ -35,6 +35,6 @@
     "eslint-plugin-react": "^6.7.1"
   },
   "bin": {
-    "granger": "./bin/granger"
+    "dumbledore": "./bin/dumbledore"
   }
 }
