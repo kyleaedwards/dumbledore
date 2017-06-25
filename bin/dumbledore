@@ -1,0 +1,318 @@
+#!/usr/bin/env node
+
+/**
+ * Imports
+ */
+const program = require('commander');
+const chalk = require('chalk');
+const utils = require('../lib/dumbledore/utils');
+const prompt = require('../lib/dumbledore/prompt');
+const Table = require('easy-table');
+const opn = require('opn');
+const { spawn, exec } = require('child_process');
+const path = require('path');
+const rimraf = require('rimraf');
+
+/**
+ * Constants
+ */
+const CONFIG_MSG = `${chalk.bold('Dumbledore')} requires a quick setup to generate a config.json entry. You are free to write your own or follow the prompts below.`;
+const CONFIG_SPELL = 'Accio config!';
+const CONFIG_QUIT = 'Press ^C at any time to quit.';
+const ALLOWED_CMDS = [
+  'create', 'list', 'open', 'start', 'stop', 'edit',
+];
+
+program.version('1.0.0');
+
+program
+  .command('create [key]')
+  .description('creates a new instance')
+  .option('-r, --repo-url <repoUrl>', 'Github repository URL')
+  .option('-t, --title <title>', 'Project title')
+  .action(create);
+
+// dumbledore list
+program
+  .command('ls')
+  .description('lists all Dumbledore instances')
+  .action(list);
+
+// dumbledore open <key>
+program
+  .command('open <key>')
+  .description('loads a project instance into a browser')
+  .action(open);
+
+program
+  .command('start <key>')
+  .description('starts a Dumbledore server')
+  .action(start);
+
+program
+  .command('stop <key>')
+  .description('stops a Dumbledore server')
+  .action(stop);
+
+program
+  .command('edit <key>')
+  .description('loads a project instance into an IDE')
+  .action(edit);
+
+program
+  .command('rm <key>')
+  .description('deletes a Dumbledore repo and config')
+  .action(rm);
+
+program.parse(process.argv);
+
+if (program.args.length === 0 || !(program.args[program.args.length - 1] instanceof program.Command)) {
+  program.help();
+  process.exit();
+}
+
+function getKey(key, cb) {
+  if (key) {
+    cb(key);
+  } else {
+    prompt('Enter a key', /[^ ]+/, cb);
+  }
+}
+
+function getTitle(options, cb) {
+  if (options && options.title) {
+    cb(options.title);
+  } else {
+    prompt('Project title', /./, cb);
+  }
+}
+
+function getRepoUrl(options, cb) {
+  if (options && options.repoUrl) {
+    cb(options.repoUrl);
+  } else {
+    prompt('Github repository URL', /\.git\/?/gi, cb);
+  }
+}
+
+function create(arg, options) {
+  getKey(arg, (key) => {
+    utils.getProcesses((err, json) => {
+      if (err) {
+        throw err;
+      }
+      if (json[key]) {
+        utils.logError(`Key ${chalk.bold(key)} is already being used.`);
+      }
+      getTitle(options, (title) => {
+        getRepoUrl(options, (repoURL) => {
+          json[key] = { title, repoURL };
+          utils.writeProcesses(json, (err) => {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(`Created successfully!`);
+              start(key);
+            }
+          });
+        });
+      });
+    });
+  });
+}
+
+function list() {
+  utils.getProcesses((err, processes) => {
+    if (err) {
+      throw err;
+    }
+    const keys = Object.keys(processes);
+    let i = 0;
+    const makeTable = (t, key) => {
+      utils.isRunning(processes[key].pid, (err, isRunning) => {
+        t.cell('Key', key);
+        t.cell('Repo URL', processes[key].repoURL);
+        t.cell('Title', processes[key].title);
+        t.cell('Running?', isRunning ? 'Y' : 'N');
+        t.newRow();
+        i++;
+        if (i === keys.length) {
+          console.log(`\n${t.toString()}`);
+          process.exit();
+        }
+      });
+    }
+    const t = new Table();
+    if (keys.length) {
+      keys.forEach((key) => {
+        makeTable(t, key);
+      });
+    } else {
+      utils.logError('No dumbledore instances found. Run `dumbledore create <key>` to get started.');
+      process.exit();
+    }
+  });
+}
+
+function open(key) {
+  utils.getProcesses((err, processes) => {
+    if (err) {
+      throw err;
+    }
+    if (!processes[key]) {
+      utils.logError(`Key ${chalk.bold(key)} does not exist. To create it, run \`dumbledore create ${key}\`.`);
+      process.exit();
+    }
+    utils.isRunning(processes[key].pid, (err, isRunning) => {
+      if (isRunning) {
+        opn('http://localhost:' + processes[key].port);
+      } else {
+        utils.logError(`Dumbledore is not running key ${chalk.bold(key)}.`);
+      }
+      process.exit();
+    });
+  });
+}
+
+function start(key) {
+  if (!key) {
+    utils.logError('No key provided.');
+    process.exit();
+  }
+
+  utils.getProcesses((err, json) => {
+    if (err) {
+      throw err;
+    }
+    if (!json[key]) {
+      utils.logError(`No Dumbledore instance exists with key ${chalk.bold(key)}.`);
+      process.exit();
+    }
+    const config = json[key];
+
+    const start = () => {
+      const child = spawn(process.argv[0] ,[`${path.resolve(__dirname, '..', 'index.js')} &> ${path.resolve(__dirname, '../logs', `${key}.log`)}`], {
+        env: {
+          DUMBLEDORE_KEY: key,
+        },
+        detached: true,
+        shell: true,
+      });
+      json[key].pid = child.pid;
+      child.unref();
+      utils.writeProcesses(json, (err) => {
+        if (err) {
+          console.log(err);
+        }
+        utils.castSpell(`${chalk.bold('Dumbledore')} is running ${chalk.bold(key)}. Run \`dumbledore stop ${key}\` to stop the server.`);
+        process.exit();
+      });
+    };
+
+    if (!config.pid) {
+      start();
+    } else {
+      utils.isRunning(config.pid, (err, isRunning) => {
+        if (err || !isRunning) {
+          start();
+        } else {
+          utils.logError(`Dumbledore already running on pid ${chalk.bold(config.pid)}.`);
+          process.exit();
+        }
+      });
+    }
+  });
+}
+
+function stop(key) {
+  utils.getProcesses((err, processes) => {
+    if (err) {
+      throw err;
+    }
+    if (!processes[key]) {
+      utils.logError(`Key ${chalk.bold(key)} does not exist. To create it, run \`dumbledore create ${key}\`.`);
+      process.exit();
+    }
+    const pid = processes[key].pid;
+    const kill = (proc, cb) => {
+      utils.isRunning(proc, (err, isRunning) => {
+        if (isRunning) {
+          exec(`kill -9 ${proc}`, (err) => {
+            cb();
+          });
+        } else {
+          cb();
+        }
+      });
+    };
+    utils.isRunning(pid, (err, isRunning) => {
+      if (isRunning) {
+        kill(pid, (err) => { // HACKY
+          kill(pid + 1, () => { // HACKIER
+            kill(pid + 2, () => { // HACKIEST
+              console.log(`Dumbledore has stopped running key ${chalk.bold(key)}.`);
+              process.exit();
+            });
+          });
+        });
+      } else {
+        utils.logError(`Key ${chalk.bold(key)} is not running.`);
+        process.exit();
+      }
+    });
+  });
+}
+
+function edit(key) {
+  utils.getProcesses((err, processes) => {
+    if (err) {
+      throw err;
+    }
+    if (!processes[key]) {
+      utils.logError(`Key ${chalk.bold(key)} does not exist. To create it, run \`dumbledore create ${key}\`.`);
+      process.exit();
+    }
+    if (!processes[key].directory) {
+      utils.logError(`Key ${chalk.bold(key)} does not currently have a directory. To create it and pull down the attached repo, run \`dumbledore start ${key}\`.`);
+      process.exit();
+    }
+    const dir = processes[key].directory;
+    const child = spawn('/bin/bash', [`mate ${dir} || subl ${dir} || atom ${dir}`], {
+      detached: true,
+      shell: true,
+    });
+    child.unref();
+    process.exit();
+  });
+}
+
+function rm(key) {
+  utils.getProcesses((err, processes) => {
+    const del = () => {
+      delete processes[key];
+      utils.writeProcesses(processes, () => {
+        console.log(`Key ${key} deleted successfully.`);
+        process.exit();
+      });
+    };
+    if (err) {
+      throw err;
+    }
+    if (!processes[key]) {
+      utils.logError(`Key ${chalk.bold(key)} does not exist.`);
+      process.exit();
+    }
+    utils.isRunning(processes[key].pid, (err, isRunning) => {
+      if (isRunning) {
+        utils.logError(`Key ${chalk.bold(key)} is still running and you must stop it before deleting.`);
+        process.exit();
+      } else if (!processes[key].directory) {
+        del(processes);
+      } else {
+        rimraf(processes[key].directory, () => {
+          del(processes);
+        });
+      }
+    });
+  });
+}

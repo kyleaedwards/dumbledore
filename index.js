@@ -1,69 +1,35 @@
 /**
  * Imports
  */
-const fs = require('fs');
-const path = require('path');
-const hermione = require('./lib/hermione');
-const prompt = require('./lib/hermione/prompt');
+const dumbledore = require('./lib/dumbledore');
+const utils = require('./lib/dumbledore/utils');
+const chalk = require('chalk');
 
-const ENCODING = 'utf8';
-const CONFIG = path.resolve(__dirname, 'config.json');
-const done = (port, directory) => {
-  const spell = [
-    'Accio Server',
-    'Expecto Patronum',
-    'Expelliarmus',
-    'Petrificus Totalus',
-    'Priori Incantato',
-    'Wingardium Leviosa',
-  ][Math.floor(6 * Math.random())];
+const KEY = process.env.DUMBLEDORE_KEY;
 
-  process.stdout.write([
-    '',
-    '====================================================================',
-    ` \u001b[1mHermione\u001b[22m has started conjuring on port \u001b[1m${port}\u001b[22m.`,
-    ` Watching on directory \u001b[1m${directory}\u001b[22m.`,
-    '',
-    ` (∩｀-´)⊃━☆ﾟ.*･｡ﾟ \u001b[3m"${spell}!"\u001b[23m`,
-    '====================================================================',
-    '',
-  ].join('\n'));
-};
+if (!KEY) {
+  utils.logError(`index.js must be run with a key.`);
+  process.exit();
+}
 
-fs.readFile(CONFIG, ENCODING, (err, json) => {
-  let config;
-  if (!err) {
-    try {
-      config = JSON.parse(json);
-    } catch (e) {}
+utils.getProcesses((err, json) => {
+  if (err) {
+    console.log(err);
+    return;
   }
-  if (config && config.repoURL) {
-    hermione(config, done);
-  } else {
-    config = {};
-    process.stdout.write([
-      '',
-      '====================================================================',
-      ` \u001b[1mHermione\u001b[22m requires a quick setup to generate a config.json file.`,
-      ` You are free to write your own or follow the prompts below.`,
-      '',
-      ` (∩｀-´)⊃━☆ﾟ.*･｡ﾟ \u001b[3m"Accio config!"\u001b[23m`,
-      '====================================================================',
-      '',
-      'Press ^C at any time to quit.',
-      '',
-    ].join('\n'));
-    prompt('Project title', /./, (title) => {
-      prompt('Github repository URL', /\.git\/?/gi, (repoURL) => {
-        config = { title, repoURL };
-        fs.writeFile(CONFIG, JSON.stringify(config, null, 2), ENCODING, (err) => {
-          if (err) {
-            console.log(err);
-            process.exit();
-          }
-          hermione(config, done);
-        });
-      });
+  if (!json[KEY]) {
+    const key = chalk.bold(KEY);
+    utils.logError(`Could not start a Dumbledore instance with key ${key}. Please run \`dumbledore create ${KEY}\`.`);
+  }
+  dumbledore(KEY, json[KEY], (port, directory) => {
+    const nm = chalk.bold('Dumbledore');
+    const prt = chalk.bold(port);
+    const dir = chalk.bold(directory);
+    const key = chalk.bold(KEY);
+    json[KEY].port = port;
+    json[KEY].directory = directory;
+    utils.writeProcesses(json, (err) => {
+      utils.castSpell(`${nm} has started conjuring ${key} on port ${prt}. Watching on directory ${dir}.`);
     });
-  }
+  });
 });

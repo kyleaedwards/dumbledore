@@ -14,7 +14,11 @@ complexity/
 # OSX
 .DS_Store
 
-# Hermione document store
-docs/
-.hermione
+# Dumbledore document store
+docs/*
+!docs/.gitkeep
+logs/*
+!logs/.gitkeep
+.dumbledore*
 config.json
+processes.json
