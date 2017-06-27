@@ -11,6 +11,14 @@ function processLinks() {
   });
 }
 
+function debounce(cb, delay) {
+  let timeout;
+  return () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(cb, delay || 100);
+  };
+}
+
 const doSearch = debounce(() => {
   const query = document.getElementById('query');
   fetch(`/?s=${query.value}&json=true`).then((resp) => {
@@ -42,14 +50,6 @@ function getPage(uri) {
       processLinks();
     });
   });
-}
-
-function debounce(cb, delay) {
-  let timeout;
-  return () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(cb, delay || 100);
-  };
 }
 
 socket.on('grab_room', () => {
@@ -97,7 +97,6 @@ document.addEventListener('change', (e) => {
 });
 
 document.addEventListener('keyup', (e) => {
-  console.log(e.target.id);
   const target = e.target;
   if (target.id === 'query') {
     doSearch();

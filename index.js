@@ -1,35 +1,41 @@
+'use strict';
+
 /**
  * Imports
  */
 const dumbledore = require('./lib/dumbledore');
-const utils = require('./lib/dumbledore/utils');
+const ensure = require('./lib/dumbledore/config');
 const chalk = require('chalk');
 
-const KEY = process.env.DUMBLEDORE_KEY;
+/**
+ * Constants
+ */
+const LABEL = process.env.DUMBLEDORE_LABEL;
+const label = chalk.bold(LABEL);
 
-if (!KEY) {
-  utils.logError(`index.js must be run with a key.`);
+if (!LABEL) {
+  console.log('index.js must be run with a label.');
   process.exit();
 }
 
-utils.getProcesses((err, json) => {
-  if (err) {
-    console.log(err);
-    return;
-  }
-  if (!json[KEY]) {
-    const key = chalk.bold(KEY);
-    utils.logError(`Could not start a Dumbledore instance with key ${key}. Please run \`dumbledore create ${KEY}\`.`);
-  }
-  dumbledore(KEY, json[KEY], (port, directory) => {
-    const nm = chalk.bold('Dumbledore');
-    const prt = chalk.bold(port);
-    const dir = chalk.bold(directory);
-    const key = chalk.bold(KEY);
-    json[KEY].port = port;
-    json[KEY].directory = directory;
-    utils.writeProcesses(json, (err) => {
-      utils.castSpell(`${nm} has started conjuring ${key} on port ${prt}. Watching on directory ${dir}.`);
+ensure((config) => {
+  config.read((err, json) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    if (!json[LABEL]) {
+      console.log(`Could not start a Dumbledore instance with label ${label}. Please run \`dumbledore create ${LABEL}\`.`);
+    }
+    dumbledore(LABEL, json[LABEL], (port, directory) => {
+      const nm = chalk.bold('Dumbledore');
+      const prt = chalk.bold(port);
+      const dir = chalk.bold(directory);
+      json[LABEL].port = port;
+      json[LABEL].directory = directory;
+      config.write(json, () => {
+        console.log(`${nm} has started conjuring ${label} on port ${prt}. Watching on directory ${dir}.`);
+      });
     });
   });
 });

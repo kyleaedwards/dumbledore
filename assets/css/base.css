@@ -1,7 +1,13 @@
-@import url('https://fonts.googleapis.com/css?family=Source+Code+Pro:400,700');
+@font-face {
+	font-family: 'DumbledoreCode';
+	src: url("/fonts/code-regular.eot");
+	src: url("/fonts/code-regular.eot?#iefix") format('embedded-opentype'), url("/fonts/code-regular.ttf.woff2") format('woff2'), url("/fonts/code-regular.otf.woff") format('woff'), url("/fonts/code-regular.ttf") format('truetype'), url("/fonts/code-regular.svg#head-black") format('svg');
+	font-weight: normal;
+	font-style: normal;
+}
 
 @font-face {
-	font-family: 'HermioneHead';
+	font-family: 'DumbledoreHead';
 	src: url("/fonts/head-black.eot");
 	src: url("/fonts/head-black.eot?#iefix") format('embedded-opentype'), url("/fonts/head-black.woff") format('woff'), url("/fonts/head-black.ttf") format('truetype'), url("/fonts/head-black.svg#head-black") format('svg');
 	font-weight: normal;
@@ -9,7 +15,7 @@
 }
 
 @font-face {
-	font-family: 'HermioneBody';
+	font-family: 'DumbledoreBody';
   src: url("/fonts/body-regular.eot");
   src: url("/fonts/body-regular.eot?#iefix") format('embedded-opentype'), url("/fonts/body-regular.woff") format('woff'), url("/fonts/body-regular.ttf") format('truetype'), url("/fonts/body-regular.svg#body-regular") format('svg');
   font-weight: normal;
@@ -17,7 +23,7 @@
 }
 
 @font-face {
-	font-family: 'HermioneBody';
+	font-family: 'DumbledoreBody';
   src: url("/fonts/body-bold.eot");
   src: url("/fonts/body-bold.eot?#iefix") format('embedded-opentype'), url("/fonts/body-bold.woff") format('woff'), url("/fonts/body-bold.ttf") format('truetype'), url("/fonts/body-bold.svg#body-bold") format('svg');
   font-weight: bold;
@@ -31,13 +37,13 @@ html, body {
 }
 
 body {
-  font-family: 'HermioneBody', sans-serif;
+  font-family: 'DumbledoreBody', sans-serif;
   color: #303336;
   line-height: 1.5;
 }
 
 code, pre {
-  font-family: 'Source Code Pro', monospace;
+  font-family: 'DumbledoreCode', monospace;
   font-size: 0.9em;
 }
 
@@ -79,7 +85,7 @@ pre code {
   font-size: 14px;
   font-weight: normal;
   display: inline-block;
-  font-family: 'Source Code Pro';
+  font-family: 'DumbledoreCode';
   position: relative;
   top: -14px;
   color: #d99;
@@ -87,7 +93,7 @@ pre code {
 
 h1, h2, h3, h4, h5, h6 {
   color: #222426;
-  font-family: 'HermioneHead';
+  font-family: 'DumbledoreHead';
 }
 
 #root {
@@ -175,7 +181,7 @@ input:checked + .todo-label {
 }
 
 input[type="text"] {
-  font-family: 'Source Code Pro';
+  font-family: 'DumbledoreCode';
   padding: 10px;
   font-size: 21px;
   width: 100%;
