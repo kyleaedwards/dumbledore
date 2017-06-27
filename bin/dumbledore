@@ -26,6 +26,8 @@ const exec = childProcess.exec;
 const CONFIG_MSG = `${chalk.bold('Dumbledore')} requires a quick setup to generate a config.json entry. You are free to write your own or follow the prompts below.`;
 const CONFIG_SPELL = 'Accio config!';
 const CONFIG_QUIT = 'Press ^C at any time to quit.';
+const getLabel = (label, cb) => label ? cb(label) : prompt('Enter a label', /[^ ]+/, cb);
+const getRepoUrl = (url, cb) => url ? cb(url) : prompt('Github repository URL', /\.git\/?/gi, cb);
 const ALLOWED_CMDS = [
   'create', 'ls', 'rm', 'open', 'start', 'stop', 'edit', 'logs',
 ];
@@ -38,6 +40,7 @@ ensure((config) => {
     .command('create [label]')
     .description('creates a new instance')
     .option('-r, --repo-url <repoUrl>', 'Github repository URL')
+    .option('-l, --local', 'Local-only repoless instance')
     .action(create);
 
   program
@@ -82,9 +85,6 @@ ensure((config) => {
     process.exit();
   }
 
-  const getLabel = (label, cb) => label ? cb(label) : prompt('Enter a label', /[^ ]+/, cb);
-  const getRepoUrl = (url, cb) => url ? cb(url) : prompt('Github repository URL', /\.git\/?/gi, cb);
-
   function create(arg, options) {
     const opts = options || {};
     getLabel(arg, (label) => {
@@ -96,8 +96,8 @@ ensure((config) => {
           cli.error(`Label ${chalk.bold(label)} is already being used.`);
           process.exit();
         }
-        getRepoUrl(opts.repoUrl, (repoURL) => {
-          json[label] = { repoURL };
+        if (opts.local) {
+          json[label] = { local: true };
           config.write(json, (err) => {
             if (err) {
               console.log(err);
@@ -106,7 +106,19 @@ ensure((config) => {
               start(label);
             }
           });
-        });
+        } else {
+          getRepoUrl(opts.repoUrl, (repoURL) => {
+            json[label] = { repoURL };
+            config.write(json, (err) => {
+              if (err) {
+                console.log(err);
+              } else {
+                console.log(`Created successfully!`);
+                start(label);
+              }
+            });
+          });
+        }
       });
     });
   }
@@ -121,7 +133,7 @@ ensure((config) => {
       const makeTable = (t, label) => {
         utils.isRunning(processes[label].pid, (err, isRunning) => {
           t.cell('NAME', label);
-          t.cell('REPOSITORY', processes[label].repoURL);
+          t.cell('REPOSITORY', processes[label].local ? '<LOCAL>' : processes[label].repoURL);
           t.cell('STATUS', isRunning ? 'Running' : 'Stopped');
           t.newRow();
           i++;
