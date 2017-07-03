@@ -7,6 +7,8 @@ Current features supported:
 - Auto-sync with Github
 - Markdown
 - Offline editing/viewing
+- Content Hot-reloading
+- Simple Search
 
 Upcoming features:
 
@@ -16,15 +18,15 @@ Upcoming features:
 - Simplified checkout process
 - Improved CLI
 
+## Requirements
+
+`dumbledore` requires NodeJS version 6 or above (for now).
+
 ## Installation
 
 ```
 npm install -g dumbledore
 ```
-
-<aside class="notice">
-`dumbledore` requires NodeJS version 6 or above (for now).
-</aside>
 
 ## Getting Started
 
