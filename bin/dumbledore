@@ -29,7 +29,7 @@ const CONFIG_QUIT = 'Press ^C at any time to quit.';
 const getLabel = (label, cb) => label ? cb(label) : prompt('Enter a label', /[^ ]+/, cb);
 const getRepoUrl = (url, cb) => url ? cb(url) : prompt('Github repository URL', /\.git\/?/gi, cb);
 const ALLOWED_CMDS = [
-  'create', 'ls', 'rm', 'open', 'start', 'stop', 'edit', 'logs',
+  'create', 'ls', 'rm', 'open', 'start', 'stop', 'edit', 'logs', 'restart'
 ];
 
 ensure((config) => {
@@ -62,6 +62,11 @@ ensure((config) => {
     .command('stop <label>')
     .description('stops a Dumbledore server')
     .action(stop);
+
+  program
+    .command('restart <label>')
+    .description('restarts a Dumbledore server')
+    .action(restart);
 
   program
     .command('edit <label>')
@@ -260,6 +265,45 @@ ensure((config) => {
         } else {
           cli.error(`Label ${chalk.bold(label)} is not running.`);
           process.exit();
+        }
+      });
+    });
+  }
+
+  function restart(label) {
+    config.read((err, processes) => {
+      if (err) {
+        throw err;
+      }
+      if (!processes[label]) {
+        cli.error(`Label ${chalk.bold(label)} does not exist. To create it, run \`dumbledore create ${label}\`.`);
+        process.exit();
+      }
+      const pid = processes[label].pid;
+      const kill = (proc, cb) => {
+        utils.isRunning(proc, (err, isRunning) => {
+          if (isRunning) {
+            exec(`kill -9 ${proc}`, (err) => {
+              cb();
+            });
+          } else {
+            cb();
+          }
+        });
+      };
+      utils.isRunning(pid, (err, isRunning) => {
+        if (isRunning) {
+          kill(pid, (err) => { // HACKY
+            kill(pid + 1, () => { // HACKIER
+              kill(pid + 2, () => { // HACKIEST
+                cli.spell(`${chalk.bold('Dumbledore')} has stopped running label ${chalk.bold(label)}.`, 'Petrificus Totalus');
+                start(label);
+              });
+            });
+          });
+        } else {
+          cli.error(`Label ${chalk.bold(label)} is not running.`);
+          start(label);
         }
       });
     });
