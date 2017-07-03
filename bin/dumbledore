@@ -197,7 +197,7 @@ ensure((config) => {
       }
       const conf = json[label];
 
-      const start = () => {
+      const startServer = () => {
         const child = spawn(process.argv[0] ,[`${path.resolve(__dirname, '..', 'index.js')} &> ${config.path('logs', `${label}.log`)}`], {
           env: {
             DUMBLEDORE_LABEL: label,
@@ -217,11 +217,11 @@ ensure((config) => {
       };
 
       if (!conf.pid) {
-        start();
+        startServer();
       } else {
         utils.isRunning(conf.pid, (err, isRunning) => {
           if (err || !isRunning) {
-            start();
+            startServer();
           } else {
             cli.error(`Dumbledore already running on pid ${chalk.bold(conf.pid)}.`);
             process.exit();
